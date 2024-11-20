@@ -1,7 +1,13 @@
 package com.example.to_do_list_drag.vmv.view
 
+import android.content.ClipData
+import android.content.ClipDescription
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.draganddrop.dragAndDropSource
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 
@@ -17,105 +23,64 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
-import com.example.to_do_list_drag.DragTrarget
-import com.example.to_do_list_drag.DropItem
+
 import com.example.to_do_list_drag.models.Task
-import com.example.to_do_list_drag.models.TaskStatus
+
 import com.example.to_do_list_drag.vmv.viewmodel.MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragAndDropTransferData
+import androidx.compose.ui.draganddrop.mimeTypes
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.to_do_list_drag.components.QueueTask
+import com.example.to_do_list_drag.models.QueueType
+
 @Composable
-fun MainScreen(mainViewModel: MainViewModel = viewModel()) {
-    // Observar directamente el estado de items
-    val tasks = mainViewModel.items
-    // Llamar a un método para añadir tareas de ejemplo (solo si es necesario)
-    LaunchedEffect(Unit) {
-        if (tasks.isEmpty()) {
-            mainViewModel.addExampleTasks()
-        }
-    }
-    Row(modifier = Modifier.fillMaxSize()) {
-        TaskColumn(
-            title = "To Do",
-            tasks = tasks.filter { it.status == TaskStatus.TO_DO },
-            onTaskDropped = { task ->
-                mainViewModel.updateTaskStatus(task, TaskStatus.TO_DO)
-            },
-            viewModel = mainViewModel,
-            modifier = Modifier.weight(1f)
-        )
-        TaskColumn(
-            title = "In Progress",
-            tasks = tasks.filter { it.status == TaskStatus.IN_PROGRESS },
-            onTaskDropped = { task ->
-                mainViewModel.updateTaskStatus(task, TaskStatus.IN_PROGRESS)
-            },
-            viewModel = mainViewModel,
-            modifier = Modifier.weight(1f)
-        )
-        TaskColumn(
-            title = "Done",
-            tasks = tasks.filter { it.status == TaskStatus.DONE },
-            onTaskDropped = { task ->
-                mainViewModel.updateTaskStatus(task, TaskStatus.DONE)
-            },
-            viewModel = mainViewModel,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-@Composable
-fun TaskColumn(
-    title: String,
-    tasks: List<Task>,
-    onTaskDropped: (Task) -> Unit,
-    viewModel: MainViewModel,  // Asegúrate de recibir el ViewModel
-    modifier: Modifier = Modifier
+fun MainScreen(   modifier: Modifier = Modifier,
+                  viewModel: MainViewModel = viewModel()
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .padding(8.dp)
-            .border(1.dp, Color.Black, shape = RoundedCornerShape(8.dp))
+
+    val todoTasks = viewModel.todoTasks
+    val inProgressTasks = viewModel.inProgressTasks
+    val doneTasks = viewModel.doneTasks
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(8.dp))
-
-        tasks.forEach { task ->
-            DragTrarget(
-                modifier = Modifier.wrapContentWidth().padding(4.dp),
-                datatoDrop = task,
-                viewModel = viewModel  // Pasar el ViewModel aquí
-            ) {
-                TaskItem(task)
+        QueueTask(
+            queueType = QueueType.TodoQueue,
+            tasks = todoTasks,
+            modifier = Modifier.weight(1f),
+            onTaskDrop = { task, fromQueueType ->
+                viewModel.moveTask(task, fromQueueType, QueueType.TodoQueue)
             }
-        }
-
-        DropItem<Task>(
-            modifier = Modifier.fillMaxSize()
-        ) { isInBound, droppedTask ->
-            if (isInBound && droppedTask != null) {
-                println("Task dropped: ${droppedTask.title} to $title")
-                onTaskDropped(droppedTask)
+        )
+        QueueTask(
+            queueType = QueueType.InProgressQueue,
+            tasks = inProgressTasks,
+            modifier = Modifier.weight(1f),
+            onTaskDrop = { task, fromQueueType ->
+                viewModel.moveTask(task, fromQueueType, QueueType.InProgressQueue)
             }
-        }
+        )
+        QueueTask(
+            queueType = QueueType.DoneQueue,
+            tasks = doneTasks,
+            modifier = Modifier.weight(1f),
+            onTaskDrop = { task, fromQueueType ->
+                viewModel.moveTask(task, fromQueueType, QueueType.DoneQueue)
+            }
+        )
     }
 }
 
-@Composable
-fun TaskItem(task: Task) {
-    Box(
-        modifier = Modifier
-            .wrapContentWidth()
-            .padding(8.dp)
-            .background(Color.LightGray, shape = RoundedCornerShape(8.dp)) // Aquí se aplica el radio
-            .border(1.dp, Color.LightGray, shape = RoundedCornerShape(8.dp)) // Asegúrate de aplicar el mismo shape al borde
-            .padding(8.dp)
-    ) {
-        Column {
-            Text("${task.title}:")
-            Text("${task.description}")
-        }
-    }
-}
+
+

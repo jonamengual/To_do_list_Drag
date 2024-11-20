@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.to_do_list_drag.ui.theme.To_do_list_DragTheme
 import com.example.to_do_list_drag.vmv.view.MainScreen
 import com.example.to_do_list_drag.vmv.viewmodel.MainViewModel
@@ -24,12 +25,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             To_do_list_DragTheme {
-                DragableScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White.copy(0.8f))
-                ){
-                    MainScreen()
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    MainScreen(modifier = Modifier.padding(innerPadding).padding(8.dp))
                 }
 
             }
@@ -44,12 +41,8 @@ class MainActivity : ComponentActivity() {
 fun GreetingPreview() {
      val viewModel = MainViewModel()
     To_do_list_DragTheme {
-        DragableScreen(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White.copy(0.8f))
-        ){
-            MainScreen(viewModel)
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            MainScreen(modifier = Modifier.padding(innerPadding).padding(8.dp))
         }
     }
 }
